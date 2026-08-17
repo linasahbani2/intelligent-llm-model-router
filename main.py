@@ -12,5 +12,5 @@ def health_check():
     return {"status": "ok"}
 
 @app.get("/route")
-def route(query: str = Query(...)):
-    return route_request(query)
+def route(query: str = Query(...), strategy: str = Query("score")):
+    return route_request(query, strategy)
