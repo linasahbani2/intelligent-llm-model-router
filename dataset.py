@@ -1,0 +1,17 @@
+TEST_QUERIES = [
+    "Bonjour",
+    "Quelle heure est-il",
+    "Traduis 'hello' en français",
+    "def add(a, b): return a + b",
+    "Résume ce texte en une phrase",
+    "Analyse les risques juridiques de ce contrat de 80 pages",
+    "Compare les architectures microservices et monolithiques en détail",
+    "Conçois un algorithme de tri efficace pour de grands volumes de données",
+    "Explique en détail comment fonctionne le consensus distribué dans un système fault-tolerant",
+    "Peux-tu m'aider à comprendre ce concept simplement s'il te plaît",
+    "SELECT * FROM users WHERE active = true",
+    "Pourquoi le ciel est bleu",
+    "Design a fault-tolerant distributed system architecture for high availability",
+    "Merci",
+    "Calcule 125 fois 38",
+]

@@ -82,6 +82,8 @@ def route_request(query: str, strategy: str = "score"):
 
     if strategy == "rules":
         chosen_model_name = decide_model(features)
+    elif strategy == "always_large":
+        chosen_model_name = decide_model_always_large(features)
     else:
         chosen_model_name = decide_model_by_score(features)
 
@@ -100,3 +102,7 @@ def route_request(query: str, strategy: str = "score"):
         "features": features,
         "result": result
     }
+
+def decide_model_always_large(features: dict) -> str:
+    """Baseline 1 : utilise toujours le modèle le plus puissant"""
+    return "large"
