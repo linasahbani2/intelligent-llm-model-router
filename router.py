@@ -6,7 +6,7 @@ from model_registry import get_model_info, list_available_models
 def decide_model(features: dict) -> str:
     """Décide quel modèle utiliser selon les caractéristiques de la requête"""
     if features["has_code"] or features["has_reasoning_keywords"]:
-        if features["word_count"] > 20:
+        if features["word_count"] > 15:
             return "large"
         else:
             return "medium"
