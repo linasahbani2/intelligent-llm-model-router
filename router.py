@@ -5,7 +5,13 @@ def route_request(query: str):
     """Décide quel modèle utiliser selon la complexité de la requête"""
     features = analyze_request(query)
 
-    if features["word_count"] < 10:
+    is_simple = (
+        features["word_count"] < 10
+        and not features["has_code"]
+        and not features["has_reasoning_keywords"]
+    )
+
+    if is_simple:
         chosen_model = "small"
         result = small_model(query)
     else:
