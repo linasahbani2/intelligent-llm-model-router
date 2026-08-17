@@ -17,3 +17,12 @@ def large_model(query: str):
         "cost": 0.02,
         "latency": 1.0
     }
+
+def medium_model(query: str):
+    """Simule un modèle moyen : équilibre entre vitesse et qualité"""
+    time.sleep(0.5)
+    return {
+        "response": f"[Medium Model] Réponse équilibrée à: '{query}'",
+        "cost": 0.008,
+        "latency": 0.5
+    }
