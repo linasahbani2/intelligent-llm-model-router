@@ -1,8 +1,15 @@
 from analyzer import analyze_request
 from model_registry import get_model_info, list_available_models
+from models import small_model, medium_model, large_model
 
 
-# --- Ancienne approche (Baseline 2 : règles) ---
+# --- Baseline 1 : toujours le plus grand modèle ---
+def decide_model_always_large(features: dict) -> str:
+    """Baseline 1 : utilise toujours le modèle le plus puissant"""
+    return "large"
+
+
+# --- Baseline 2 : règles ---
 def decide_model(features: dict) -> str:
     """Décide quel modèle utiliser selon les caractéristiques de la requête"""
     if features["has_code"] or features["has_reasoning_keywords"]:
@@ -19,7 +26,7 @@ def decide_model(features: dict) -> str:
         return "large"
 
 
-# --- Nouvelle approche (Stratégie score pondéré, section 10) ---
+# --- Stratégie score pondéré (section 10) ---
 WEIGHTS = {
     "alpha": 1.0,   # poids de la qualité
     "beta": 3.0,    # poids du coût (pénalité)
@@ -75,6 +82,37 @@ def decide_model_by_score(features: dict) -> str:
     return best_model_name
 
 
+# --- Stratégie Cascade (section 12) ---
+CONFIDENCE_THRESHOLD = 0.75
+
+CASCADE_ORDER = [
+    ("small", small_model),
+    ("medium", medium_model),
+    ("large", large_model),
+]
+
+
+def route_with_cascade(query: str):
+    """Essaie le modèle le moins cher en premier,
+    escalade vers un modèle plus puissant seulement si la confiance est trop basse"""
+    for model_name, model_function in CASCADE_ORDER:
+        result = model_function(query)
+
+        if result["confidence"] >= CONFIDENCE_THRESHOLD:
+            return {
+                "chosen_model": model_name,
+                "escalated": model_name != "small",
+                "result": result,
+            }
+
+    # Si on arrive ici, même "large" n'était pas confiant : on renvoie sa réponse quand même
+    return {
+        "chosen_model": "large",
+        "escalated": True,
+        "result": result,
+    }
+
+
 # --- Fonction principale, utilisée par l'API ---
 def route_request(query: str, strategy: str = "score"):
     """Analyse la requête, choisit un modèle, et l'exécute"""
@@ -84,6 +122,16 @@ def route_request(query: str, strategy: str = "score"):
         chosen_model_name = decide_model(features)
     elif strategy == "always_large":
         chosen_model_name = decide_model_always_large(features)
+    elif strategy == "cascade":
+        cascade_result = route_with_cascade(query)
+        return {
+            "strategy_used": strategy,
+            "chosen_model": cascade_result["chosen_model"],
+            "escalated": cascade_result["escalated"],
+            "model_metadata": get_model_info(cascade_result["chosen_model"]),
+            "features": features,
+            "result": cascade_result["result"],
+        }
     else:
         chosen_model_name = decide_model_by_score(features)
 
@@ -102,7 +150,3 @@ def route_request(query: str, strategy: str = "score"):
         "features": features,
         "result": result
     }
-
-def decide_model_always_large(features: dict) -> str:
-    """Baseline 1 : utilise toujours le modèle le plus puissant"""
-    return "large"
