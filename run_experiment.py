@@ -1,7 +1,7 @@
 from dataset import TEST_QUERIES
 from router import route_request
 
-STRATEGIES = ["always_large", "rules", "score"]
+STRATEGIES = ["always_large", "rules", "score", "cascade"]
 
 
 def run_comparison():

@@ -124,11 +124,16 @@ def route_request(query: str, strategy: str = "score"):
         chosen_model_name = decide_model_always_large(features)
     elif strategy == "cascade":
         cascade_result = route_with_cascade(query)
+        model_info = get_model_info(cascade_result["chosen_model"])
         return {
             "strategy_used": strategy,
             "chosen_model": cascade_result["chosen_model"],
             "escalated": cascade_result["escalated"],
-            "model_metadata": get_model_info(cascade_result["chosen_model"]),
+            "model_metadata": {
+                "expected_cost": model_info["cost_per_call"],
+                "expected_latency": model_info["avg_latency"],
+                "expected_quality": model_info["quality_score"]
+            },
             "features": features,
             "result": cascade_result["result"],
         }
