@@ -7,7 +7,7 @@ REASONING_KEYWORDS = [
     "analyse", "analyser", "compare", "comparer", "explique en détail",
     "conçois", "conception", "démontre", "prouve", "évalue",
     "design", "architecture", "algorithme", "explain in detail",
-    "compare", "design", "analyze", "evaluate", "demonstrate"
+    "analyze", "evaluate", "demonstrate"
 ]
 
 LENGTH_THRESHOLD = 14  # 75e percentile du dataset

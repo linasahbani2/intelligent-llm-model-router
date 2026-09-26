@@ -1,7 +1,7 @@
 from analyzer import analyze_request
 from model_registry import get_model_info, list_available_models
 from models import small_model, medium_model, large_model
-
+from ml_classifier import predict_complexity
 
 # --- Baseline 1 : toujours le plus grand modèle ---
 def decide_model_always_large(features: dict) -> str:
@@ -25,6 +25,15 @@ def decide_model(features: dict) -> str:
     else:
         return "large"
 
+def decide_model_ml(query: str) -> str:
+    """Stratégie 3 (section 11) : utilise un classifieur ML entraîné
+    pour prédire la complexité, puis choisit le modèle en conséquence"""
+    complexity = predict_complexity(query)
+
+    if complexity == "complex":
+        return "large"
+    else:
+        return "small"
 
 # --- Stratégie score pondéré (section 10) ---
 WEIGHTS = {
@@ -122,6 +131,8 @@ def route_request(query: str, strategy: str = "score"):
         chosen_model_name = decide_model(features)
     elif strategy == "always_large":
         chosen_model_name = decide_model_always_large(features)
+    elif strategy == "ml":
+        chosen_model_name = decide_model_ml(query)
     elif strategy == "cascade":
         cascade_result = route_with_cascade(query)
         model_info = get_model_info(cascade_result["chosen_model"])
@@ -139,7 +150,6 @@ def route_request(query: str, strategy: str = "score"):
         }
     else:
         chosen_model_name = decide_model_by_score(features)
-
     model_info = get_model_info(chosen_model_name)
     model_function = model_info["function"]
     result = model_function(query)
