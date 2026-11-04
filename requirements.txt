@@ -30,6 +30,7 @@ numpy==2.5.3
 packaging==26.3
 pandas==3.0.6
 pluggy==1.6.0
+prometheus_client==0.26.0
 propcache==0.5.4
 pyarrow==25.0.1
 pydantic==2.13.4
