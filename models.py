@@ -5,6 +5,10 @@ import random
 # Mettre SIMULATE_DELAY=0 pour désactiver les délais simulés (utile pour les expériences)
 SIMULATE_DELAY = os.getenv("SIMULATE_DELAY", "1") == "1"
 
+# Multiplicateur de la pénalité de confiance par mot (1.0 = comportement d'origine).
+# Modifié par les scripts d'analyse de sensibilité.
+PENALTY_SCALE = 1.0
+
 
 def _wait(seconds: float):
     """Simule le temps de traitement d'un modèle, sauf si les délais sont désactivés"""
@@ -27,7 +31,7 @@ def estimate_confidence(query: str, model_size: str) -> float:
         "small": 0.04,
         "medium": 0.015,
         "large": 0.003,
-    }[model_size]
+    }[model_size] * PENALTY_SCALE
 
     confidence = base_confidence - (word_count * complexity_penalty)
     confidence += random.uniform(-0.05, 0.05)
