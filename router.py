@@ -3,6 +3,7 @@ from model_registry import get_model_info, list_available_models
 from models import small_model, medium_model, large_model
 from ml_classifier import predict_complexity
 
+
 # --- Baseline 1 : toujours le plus grand modèle ---
 def decide_model_always_large(features: dict) -> str:
     """Baseline 1 : utilise toujours le modèle le plus puissant"""
@@ -25,15 +26,18 @@ def decide_model(features: dict) -> str:
     else:
         return "large"
 
+
+# --- Stratégie ML (section 11) ---
 def decide_model_ml(query: str) -> str:
-    """Stratégie 3 (section 11) : utilise un classifieur ML entraîné
-    pour prédire la complexité, puis choisit le modèle en conséquence"""
+    """Utilise un classifieur ML entraîné pour prédire la complexité,
+    puis choisit le modèle en conséquence"""
     complexity = predict_complexity(query)
 
     if complexity == "complex":
         return "large"
     else:
         return "small"
+
 
 # --- Stratégie score pondéré (section 10) ---
 WEIGHTS = {
@@ -102,22 +106,28 @@ CASCADE_ORDER = [
 
 
 def route_with_cascade(query: str):
-    """Essaie le modèle le moins cher en premier,
-    escalade vers un modèle plus puissant seulement si la confiance est trop basse"""
+    """Essaie le modèle le moins cher en premier, escalade si la confiance est trop basse.
+    Le coût et la latence incluent TOUS les modèles essayés, pas seulement le dernier."""
+    total_cost = 0.0
+    total_latency = 0.0
+    attempted_models = []
+    result = None
+
     for model_name, model_function in CASCADE_ORDER:
         result = model_function(query)
+        total_cost += result["cost"]
+        total_latency += result["latency"]
+        attempted_models.append(model_name)
 
         if result["confidence"] >= CONFIDENCE_THRESHOLD:
-            return {
-                "chosen_model": model_name,
-                "escalated": model_name != "small",
-                "result": result,
-            }
+            break
 
-    # Si on arrive ici, même "large" n'était pas confiant : on renvoie sa réponse quand même
     return {
-        "chosen_model": "large",
-        "escalated": True,
+        "chosen_model": attempted_models[-1],
+        "escalated": len(attempted_models) > 1,
+        "attempted_models": attempted_models,
+        "total_cost": total_cost,
+        "total_latency": total_latency,
         "result": result,
     }
 
@@ -135,14 +145,16 @@ def route_request(query: str, strategy: str = "score"):
         chosen_model_name = decide_model_ml(query)
     elif strategy == "cascade":
         cascade_result = route_with_cascade(query)
-        model_info = get_model_info(cascade_result["chosen_model"])
+        chosen_model_name = cascade_result["chosen_model"]
+        model_info = get_model_info(chosen_model_name)
         return {
             "strategy_used": strategy,
-            "chosen_model": cascade_result["chosen_model"],
+            "chosen_model": chosen_model_name,
             "escalated": cascade_result["escalated"],
+            "attempted_models": cascade_result["attempted_models"],
             "model_metadata": {
-                "expected_cost": model_info["cost_per_call"],
-                "expected_latency": model_info["avg_latency"],
+                "expected_cost": cascade_result["total_cost"],
+                "expected_latency": cascade_result["total_latency"],
                 "expected_quality": model_info["quality_score"]
             },
             "features": features,
@@ -150,6 +162,7 @@ def route_request(query: str, strategy: str = "score"):
         }
     else:
         chosen_model_name = decide_model_by_score(features)
+
     model_info = get_model_info(chosen_model_name)
     model_function = model_info["function"]
     result = model_function(query)
